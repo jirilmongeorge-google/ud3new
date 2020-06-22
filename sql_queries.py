@@ -61,23 +61,23 @@ CREATE TABLE staging_songs (
 
 songplay_table_create = ("""
 CREATE TABLE songplays(songplay_id INT IDENTITY(0,1), start_time timestamp, 
-user_id int, level varchar, song_id varchar, artist_id varchar, session_id int, location varchar, user_agent varchar)
+user_id int NOT NULL, level varchar, song_id varchar NOT NULL, artist_id varchar NOT NULL, session_id int, location varchar, user_agent varchar, PRIMARY KEY(songplay_id))
 """)
 
 user_table_create = ("""
-CREATE TABLE users(user_id int, first_name varchar, last_name varchar, gender varchar, level varchar)
+CREATE TABLE users(user_id int NOT NULL, first_name varchar, last_name varchar, gender varchar, level varchar, PRIMARY KEY(user_id))
 """)
 
 song_table_create = ("""
-CREATE TABLE songs(song_id varchar, title varchar, artist_id varchar, year int, duration float)
+CREATE TABLE songs(song_id varchar NOT NULL, title varchar, artist_id varchar, year int, duration float, PRIMARY KEY(song_id))
 """)
 
 artist_table_create = ("""
-CREATE TABLE artists(artist_id varchar, name varchar, location varchar, latitude float, longitude  float)
+CREATE TABLE artists(artist_id varchar  NOT NULL, name varchar, location varchar, latitude float, longitude  float, PRIMARY KEY(artist_id))
 """)
 
 time_table_create = ("""
-CREATE TABLE time (start_time timestamp, hour varchar, day varchar, week varchar, month varchar, year varchar, weekday varchar)
+CREATE TABLE time (start_time timestamp NOT NULL, hour varchar, day varchar, week varchar, month varchar, year varchar, weekday varchar, PRIMARY KEY(start_time))
 """)
 
 # STAGING TABLES
@@ -101,29 +101,29 @@ region 'us-west-2'
 
 songplay_table_insert = ("""
 INSERT INTO songplays(start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)  
-SELECT (timestamp 'epoch' + e.ts/1000 * interval '1 second'), e.userId, e.level, s.song_id, s.artist_id, e.sessionId, e.location, e.userAgent  
+SELECT DISTINCT (timestamp 'epoch' + e.ts/1000 * interval '1 second'), e.userId, e.level, s.song_id, s.artist_id, e.sessionId, e.location, e.userAgent  
 FROM staging_events e JOIN staging_songs s ON e.song=s.title  AND e.artist=s.artist_name  
 """)
 
 user_table_insert = ("""
 INSERT INTO users(user_id, first_name, last_name, gender, level )  
-SELECT userId, firstName, lastName, gender, level FROM staging_events
+SELECT DISTINCT userId, firstName, lastName, gender, level FROM staging_events
 """)
 
 song_table_insert = ("""
 INSERT INTO songs(song_id, title, artist_id, year, duration) 
-SELECT song_id, title, artist_id, year, duration FROM staging_songs
+SELECT DISTINCT song_id, title, artist_id, year, duration FROM staging_songs
 """)
 
 artist_table_insert = ("""
 INSERT INTO artists(artist_id, name, location, latitude, longitude) 
-SELECT s.artist_id,s.artist_name,e.location,s.artist_latitude,s.artist_longitude 
+SELECT DISTINCT s.artist_id,s.artist_name,e.location,s.artist_latitude,s.artist_longitude 
 FROM staging_events e JOIN staging_songs s ON e.song=s.title  AND e.artist=s.artist_name  
 """)
 
 time_table_insert = ("""
 INSERT INTO time(start_time , hour , day , week , month, year, weekday)  
-SELECT (timestamp 'epoch' + ts/1000 * interval '1 second'), extract(hour from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(day from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(week from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(month from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(year from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(dow from (timestamp 'epoch' + ts/1000 * interval '1 second')) FROM staging_events  
+SELECT DISTINCT (timestamp 'epoch' + ts/1000 * interval '1 second'), extract(hour from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(day from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(week from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(month from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(year from (timestamp 'epoch' + ts/1000 * interval '1 second')), extract(dow from (timestamp 'epoch' + ts/1000 * interval '1 second')) FROM staging_events  
 """)
 
 # QUERY LISTS
